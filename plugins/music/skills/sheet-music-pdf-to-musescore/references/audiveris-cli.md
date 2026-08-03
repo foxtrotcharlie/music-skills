@@ -140,3 +140,32 @@ The handbook's "Improved Input" page collects two community techniques:
 Dense music takes **minutes per sheet**. A run that appears to hang usually
 isn't. See the timeout guidance in `SKILL.md` — long runs need backgrounding,
 not a longer foreground timeout.
+
+
+## Placing chord symbols: what works and what doesn't
+
+`place_chords_from_pdf.py` divides each system's width into equal slots, one per
+bar, to decide which bar a chord belongs to, then snaps the chord's fractional
+position within that slot onto the nearest real note onset. Two better-sounding
+approaches were tried and measured:
+
+**MuseScore ignores `<offset>` on `<harmony>`.** Tested directly: a chord written
+at the bar start with `<offset>8</offset>` renders stacked on the chord at
+offset 0, not half a bar later. So a chord that belongs later in the bar must be
+**interleaved between the note elements** instead. That in turn means the chord
+can only land on an onset the *host part* actually has — a sparse vocal line does
+not share the piano's rhythmic grid.
+
+**Real barline positions are not recoverable from the text layer.** Internal
+barlines are drawn as vector lines, not font glyphs; only the system-end barline
+appears (a very narrow, tall glyph). Inferring them from note spacing — notes sit
+evenly within a bar and the gap widens at a barline — works on a piano-only
+system, but fails on a three-staff system, where vocal and piano noteheads
+interleave in x and fill the gaps, so the barline gaps stop being the largest.
+Measured result: bar assignments collapsed, putting two consecutive chords in one
+bar. Clustering staff positions by y does not separate them cleanly either
+(7 clusters for 11 staves on one page).
+
+Consequence: **bar assignment is reliable, beat placement is approximate.** A
+chord may sit a beat later than engraved. Snapping to a real onset means the
+result is always musically valid, never a fractional position.

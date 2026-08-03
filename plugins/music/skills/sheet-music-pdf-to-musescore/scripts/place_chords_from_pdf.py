@@ -219,10 +219,14 @@ def main() -> int:
             span = (right - left) / len(mlist)
             for _y, x0, sym in row:
                 k = max(0, min(int((x0 - left) / span), len(mlist) - 1))
-                placements.setdefault(mlist[k], []).append((x0, sym))
+                # Where in the bar the symbol sits, 0.0 at the barline to 1.0 at
+                # the next. Two chords in one bar must land on different beats or
+                # MuseScore stacks them vertically instead of spreading them out.
+                frac = (x0 - (left + k * span)) / span
+                placements.setdefault(mlist[k], []).append((min(max(frac, 0.0), 0.999), sym))
 
     for m in placements:
-        placements[m] = [s for _x, s in sorted(placements[m])]
+        placements[m] = sorted(placements[m])
 
     total = sum(len(v) for v in placements.values())
     print(f"placed {total} chord symbol(s) across {len(placements)} bar(s)")
@@ -230,7 +234,7 @@ def main() -> int:
         print(f"  SKIPPED {mismatch}")
 
     for m in sorted(placements, key=lambda s: int(re.sub(r"\D", "", s) or 0)):
-        print(f"   m{m}: {' '.join(placements[m])}")
+        print(f"   m{m}: {' '.join(s for _f, s in placements[m])}")
 
     if dry:
         print("dry run: nothing written")
@@ -251,14 +255,31 @@ def main() -> int:
         syms = placements.get(meas.get("number"))
         if not syms:
             continue
-        at = 0
+        # The bar's rhythmic timeline: where each distinct note onset starts and
+        # its index among the children. <chord> notes share the previous onset.
+        onsets: list[tuple[int, int]] = []
+        clock = 0
         for i, child in enumerate(list(meas)):
-            if child.tag in ("print", "attributes"):
-                at = i + 1
-        for j, sym in enumerate(syms):
+            if child.tag == "note":
+                if child.find("chord") is None:
+                    onsets.append((clock, i))
+                    dur = child.findtext("duration")
+                    clock += int(dur) if dur and dur.isdigit() else 0
+            elif child.tag == "backup":
+                break          # a second voice or staff restarts the bar
+        bar_len = clock or 1
+        if not onsets:
+            onsets = [(0, len(list(meas)))]
+
+        # MuseScore ignores <offset> on harmony - verified - so a chord has to be
+        # interleaved between notes to sit later in the bar. Insert from the back
+        # so earlier indices stay valid.
+        for frac, sym in sorted(syms, reverse=True):
             h = harmony(sym)
-            if h is not None:
-                meas.insert(at + j, h)
+            if h is None:
+                continue
+            _t, idx = min(onsets, key=lambda o: abs(o[0] - frac * bar_len))
+            meas.insert(idx, h)
 
     tree.write(dst, encoding="UTF-8", xml_declaration=True)
     print(f"removed {replaced} OMR harmony element(s), wrote {total} from the PDF")
