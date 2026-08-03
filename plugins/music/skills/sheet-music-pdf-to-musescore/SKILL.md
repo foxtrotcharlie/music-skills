@@ -135,6 +135,26 @@ ground-truth list per page plus what OMR lost, so chord symbols get retyped from
 a verified list rather than squinting at the PDF. It exits 1 on a scanned PDF
 (no text layer), where OCR is the only route.
 
+**Then place every chord symbol in the right bar:**
+
+```bash
+python3 ${CLAUDE_SKILL_DIR}/scripts/place_chords_from_pdf.py \
+  score.pdf ~/Desktop/omr-out/clean.xml ~/Desktop/omr-out/chorded.xml
+```
+
+The PDF text layer holds every chord with coordinates, and the score holds its
+own layout in `<print new-page>` / `<print new-system>` markers. Together those
+place each chord: cluster the symbols into rows (one per system), match rows to
+systems, then split each system's width by its bar count. On a real chart this
+put **all 67** chords in the correct bars, against 16 from OMR. Use `--dry-run`
+to review the per-bar table before writing.
+
+Two traps it handles: a system with **no** chords would shift every later row up
+by one, so it skips ahead where the vertical step between rows doubles; and
+harmony must be cleared from **every** part, or a leftover chord in a lower part
+renders a second time above its own staff. Its known limit is a page whose
+*first* system carries no chords — it reports a mismatch rather than guessing.
+
 `--lyrics score.xml` does the same for sung text, splitting problems into
 **misreads** (absent from the text layer) and **wrong case** (right letters,
 wrong capitalisation), each with the correct spelling. On the same chart that
