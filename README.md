@@ -26,7 +26,7 @@ Score digitisation and notation skills:
   | Script | Purpose |
   | :----- | :------ |
   | `preflight.sh` | Verifies Audiveris, OCR language data, MuseScore, poppler, and python3 before any work starts |
-  | `inspect_musicxml.py` | Parses `.xml`/`.musicxml`/`.mxl` and flags structural OMR damage (per-part measure mismatches, missing signatures, unsupported tuplets) |
+  | `inspect_musicxml.py` | Parses `.xml`/`.musicxml`/`.mxl` and flags structural OMR damage (per-part measure mismatches, missing signatures, orphan volta brackets, unsupported tuplets) |
   | `to_mscz.sh` | Converts MusicXML → `.mscz`, validating the artifact rather than MuseScore's exit code |
 
   Reference material lives in `references/` (macOS install, Audiveris CLI,

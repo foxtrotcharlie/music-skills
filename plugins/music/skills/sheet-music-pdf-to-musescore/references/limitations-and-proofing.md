@@ -74,6 +74,10 @@ order by how often each breaks.
 | Run seems to hang for minutes | Normal on dense sheets. Background it rather than raising a foreground timeout. |
 | PDF with vector graphics fails to load | FreeType — but only relevant for from-source builds, not the DMG. |
 | Measure counts differ between parts | OMR dropped or invented measures. The single most diagnostic signal; `inspect_musicxml.py` flags it. On a **single-part** score this check is unavailable — count measures against the printed page by hand. |
+| A volta bracket appears where the score has none | Long slurs, ties, and lyric extender lines get read as voltas, and a phantom volta silently changes playback structure. `inspect_musicxml.py` flags a volta with no repeat barline to jump back to, and an unclosed bracket. Observed on a real piano/vocal chart: a tie plus a `now.___` extender produced a volta and a tuplet in the same measure. |
+| Guitar chord diagrams present | Expect trouble on two fronts: the fretboard `X`/`O` grids get read as dynamics (`sfz`, `sf`, `fp`) and staccato dots, and they suppress the real chord symbols nearby. On a 6-page chart only 16 of ~70 printed chord symbols survived. Re-enter chord symbols rather than correcting them. |
+| A `C5`-style power chord vanishes from the export | Audiveris recognises it, then throws `NullPointerException` in `PartwiseBuilder.processChordName` because the chord kind is null, and drops that symbol. Export continues, so it fails quietly — check the log for `No kind type for`. Not fixable in the XML. |
+| Slash chords lose their bass note | `G/F` exports as `G`; some are missed entirely. Verify every slash chord by eye. |
 
 > Not substantiated: converter mode is often said to steal window focus. It does
 > start a real Qt `QApplication`, but a search of MuseScore's CLI issues found no

@@ -164,6 +164,41 @@ def main() -> int:
         print(f"voices      {len(voices)} distinct - multi-voice staves are "
               f"where OMR struggles most")
 
+    # ---- voltas that cannot mean anything -------------------------------
+    # A volta bracket only makes sense with a repeat to jump back to. OMR
+    # invents these from long slurs, ties, and lyric extender lines, and a
+    # phantom volta silently changes playback structure - so a count alone
+    # isn't enough, the bracket has to be corroborated.
+    endings, repeats = [], []
+    for p in parts:
+        pid = p.get("id") or "?"
+        for m in p.findall("measure"):
+            for e in m.iter("ending"):
+                endings.append((pid, m.get("number"), e.get("type"), e.get("number")))
+            for rp in m.iter("repeat"):
+                repeats.append((pid, m.get("number"), rp.get("direction")))
+
+    if endings:
+        where = ", ".join(f"{pid}/m{num} {typ or '?'}" for pid, num, typ, _ in endings[:6])
+        print(f"voltas      {len(endings)}: {where}")
+        if repeats:
+            print(f"repeats     {len(repeats)}: "
+                  + ", ".join(f"{pid}/m{num} {d or '?'}" for pid, num, d in repeats[:6]))
+        else:
+            problems.append(
+                f"volta bracket(s) at {where} but NO repeat barline anywhere - "
+                f"a volta with nothing to repeat back to is almost always a "
+                f"misread slur, tie, or lyric extender"
+            )
+        # An unterminated bracket is the same story from a different angle.
+        starts = sum(1 for _, _, t, _ in endings if t == "start")
+        closes = sum(1 for _, _, t, _ in endings if t in ("stop", "discontinue"))
+        if starts != closes:
+            problems.append(
+                f"volta brackets unbalanced ({starts} start vs {closes} "
+                f"stop/discontinue) - an unclosed volta is usually invented"
+            )
+
     if present["tuplets"]:
         problems.append(
             "tuplets present - only triplets and 6-tuplets are supported by "
