@@ -114,11 +114,14 @@ ground-truth list per page plus what OMR lost, so chord symbols get retyped from
 a verified list rather than squinting at the PDF. It exits 1 on a scanned PDF
 (no text layer), where OCR is the only route.
 
-`--lyrics score.xml` does the same for sung text: it lists every syllable that
-does **not** appear in the text layer and suggests the closest real word. On the
-same chart that found 3 misreads in 158 syllables — `'HOW.'` for "now.",
-`'WOT].'` for "won.", `'feted'` for "fered" — which is far cheaper than
-proofreading lyrics by eye.
+`--lyrics score.xml` does the same for sung text, splitting problems into
+**misreads** (absent from the text layer) and **wrong case** (right letters,
+wrong capitalisation), each with the correct spelling. On the same chart that
+found 4 errors in 158 syllables — `'HOW.'` for "now.", `'WOT].'` for "won.",
+`'feted'` for "fered", and `'neVer'` for "never" — far cheaper than proofreading
+by eye. Case matters on its own: comparing case-insensitively hides `neVer`
+completely, and a lyric syllable can hide inside an all-caps title
+(`FALL` inside `FALLING`), so titles are excluded from the case comparison.
 
 Compare the output against the printed score. **Know where to stop:** signatures,
 structural metadata, part names, and transpositions are fair game to patch in

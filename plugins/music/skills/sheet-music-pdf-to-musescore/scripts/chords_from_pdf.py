@@ -125,44 +125,75 @@ def omr_lyrics(path: str) -> list[tuple[str, str]]:
 
 
 def check_lyrics(pdf_words: set[str], xml: str) -> None:
-    """Report OMR lyric syllables that do not occur in the PDF text layer.
+    """Report OMR lyric syllables that disagree with the PDF text layer.
 
-    Lyrics are OCR, so single-character confusions are routine - an `n` read as
-    an `H` turned "now." into "HOW." on a real chart. Any syllable absent from
-    the text layer is a misread or a hyphenation artefact.
+    Two distinct failure modes, because they need different fixes:
+
+    * **Misread** - the syllable does not occur in the text layer at all. An `n`
+      read as an `H` turned "now." into "HOW." on a real chart.
+    * **Wrong case** - the letters are right but the capitalisation is not, e.g.
+      `neVer` for "never". Comparing case-insensitively hides these entirely, so
+      match case-sensitively first and only fall back to a case-insensitive
+      match to classify what went wrong.
+
+    Legitimate line-initial capitals are safe: the text layer capitalises them
+    too, so they match exactly on the first pass.
     """
     syls = omr_lyrics(xml)
     if not syls:
         print("\n=== lyrics ===\nnone in the export")
         return
-    # Compare case-insensitively on letters only: OMR keeps hyphens and
-    # punctuation that the text layer splits differently.
-    norm = {re.sub(r"[^a-z]", "", w.lower()) for w in pdf_words}
-    norm.discard("")
-    suspect = []
+
+    # Letters only, but case preserved - punctuation and hyphens are split
+    # differently by the two sources and would cause noise.
+    all_pool = {re.sub(r"[^A-Za-z]", "", w) for w in pdf_words}
+    all_pool.discard("")
+    # Titles and credits are typically set in caps ("FALLING SLOWLY"), and a
+    # lyric syllable is a substring of them often enough to hide a real case
+    # error - `FALL` hides inside `FALLING`. Exclude long all-caps tokens from
+    # the case comparison. Lyrics set entirely in caps would be missed here;
+    # that is the accepted trade for not silently passing every caps typo.
+    case_pool = {w for w in all_pool if not (w.isupper() and len(w) >= 4)}
+    # lowercase -> the correctly-cased spelling the PDF actually uses
+    ci_map: dict[str, str] = {}
+    for w in sorted(case_pool) + sorted(all_pool):
+        ci_map.setdefault(w.lower(), w)
+
+    misread: list[tuple[str, str, str]] = []
+    miscase: list[tuple[str, str, str]] = []
+
     for meas, syl in syls:
-        key = re.sub(r"[^a-z]", "", syl.lower())
+        key = re.sub(r"[^A-Za-z]", "", syl)
         if not key:
             continue
-        # A syllable of a hyphenated word legitimately appears as a fragment.
-        if key in norm or any(key in w for w in norm):
+        # Exact match, or a fragment of a hyphenated word - case-sensitive.
+        if key in case_pool or any(key in w for w in case_pool):
             continue
-        suspect.append((meas, syl))
 
-    print(f"\n=== lyrics: {len(syls)} syllables, "
-          f"{len(suspect)} not found in the PDF text layer ===")
-    # The text layer holds the right spelling, so offer the closest candidate
-    # rather than making the reader hunt for it.
-    pool = sorted(norm)
-    for meas, syl in suspect[:40]:
-        key = re.sub(r"[^a-z]", "", syl.lower())
-        near = difflib.get_close_matches(key, pool, n=2, cutoff=0.5)
-        hint = f"  -> likely {' or '.join(repr(n) for n in near)}" if near else ""
-        print(f"   m{meas}: {syl!r}{hint}")
-    if not suspect:
-        print("   all syllables corroborated by the text layer")
-    elif len(suspect) > 40:
-        print(f"   ... and {len(suspect) - 40} more")
+        low = key.lower()
+        correct = ci_map.get(low) or next(
+            (w for w in sorted(case_pool) if low in w.lower()), None)
+        if correct:
+            miscase.append((meas, syl, correct))
+        else:
+            near = difflib.get_close_matches(low, sorted(ci_map), n=2, cutoff=0.5)
+            hint = " or ".join(ci_map[n] for n in near) if near else ""
+            misread.append((meas, syl, hint))
+
+    total_bad = len(misread) + len(miscase)
+    print(f"\n=== lyrics: {len(syls)} syllables, {total_bad} disagree with the "
+          f"PDF text layer ===")
+
+    if miscase:
+        print(f"  wrong case ({len(miscase)}):")
+        for meas, syl, correct in miscase[:20]:
+            print(f"    m{meas}: {syl!r}  -> {correct!r}")
+    if misread:
+        print(f"  not in the text layer ({len(misread)}):")
+        for meas, syl, hint in misread[:20]:
+            print(f"    m{meas}: {syl!r}" + (f"  -> likely {hint!r}" if hint else ""))
+    if not total_bad:
+        print("  all syllables corroborated, including capitalisation")
 
 
 def main() -> int:
