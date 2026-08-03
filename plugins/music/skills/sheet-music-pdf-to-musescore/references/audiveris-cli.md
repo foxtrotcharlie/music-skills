@@ -75,6 +75,21 @@ switches suppress genuine articulations and genuine above-staff dynamics too.
 Only use them when the rasterised page (step 1) shows the score has none —
 typical for pop/rock lead sheets, wrong for classical piano.
 
+**Do not add `dynamicsBelowStaff=false`.** It removes the surviving `sfz`, but
+it also removes *every* real dynamic (the genuine `mp` went with it), and it
+still does not recover the chord that the phantom displaced.
+
+### A phantom dynamic can mean a lost chord
+
+The surviving `sfz` was not noise from a fretboard grid — it sat exactly where
+an `Am7` belongs, above the lyric "home". Audiveris scored `DYNAMICS_SFZ` higher
+than the chord name and the chord lost, so the phantom dynamic and the missing
+chord are one event, not two. Suppressing the dynamic does not reliably flip the
+decision (the `Am7` stayed missing, though a different chord elsewhere was
+recovered), so treat an implausible dynamic as a **flag to check the chord
+symbol at that position**, and recover chords with `scripts/chords_from_pdf.py`
+rather than by tuning switches.
+
 **`frets=true` does nothing for chord diagrams** — tested, byte-identical
 output. It governs tablature fret digits, not chord frames.
 
