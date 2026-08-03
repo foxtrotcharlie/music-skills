@@ -1,6 +1,6 @@
 {
   "name": "music",
-  "version": "1.0.0",
-  "description": "Music notation and score-digitisation skills. Currently: converting printed sheet music PDFs into editable MuseScore/MusicXML files via Audiveris OMR.",
+  "version": "1.1.0",
+  "description": "Music notation and score-digitisation skills. Currently: converting printed sheet music PDFs into editable MuseScore/MusicXML files via Audiveris OMR, with preflight, MusicXML inspection, and conversion helper scripts.",
   "author": { "name": "Charles Tanton" }
 }

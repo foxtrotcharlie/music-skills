@@ -18,10 +18,30 @@ independently-installable plugins so you only pull in what you want.
 Score digitisation and notation skills:
 
 - **sheet-music-pdf-to-musescore** — converts a printed sheet music PDF into
-  editable MuseScore/MusicXML notation using Audiveris OMR. Covers preflight
-  checks, sampling before a full run, inspecting and repairing the resulting
-  MusicXML, converting to `.mscz`, and a proofing checklist for the parts OMR
-  commonly gets wrong (rhythms, ties vs. slurs, voices, accidentals, repeats).
+  editable MuseScore/MusicXML notation using [Audiveris](https://github.com/Audiveris/audiveris)
+  OMR. Assess the PDF, sample before committing to a full run, inspect and
+  repair the MusicXML, convert to `.mscz`, then report honestly with a proofing
+  checklist. Ships three helper scripts:
+
+  | Script | Purpose |
+  | :----- | :------ |
+  | `preflight.sh` | Verifies Audiveris, OCR language data, MuseScore, poppler, and python3 before any work starts |
+  | `inspect_musicxml.py` | Parses `.xml`/`.musicxml`/`.mxl` and flags structural OMR damage (per-part measure mismatches, missing signatures, unsupported tuplets) |
+  | `to_mscz.sh` | Converts MusicXML → `.mscz`, validating the artifact rather than MuseScore's exit code |
+
+  Reference material lives in `references/` (macOS install, Audiveris CLI,
+  limitations + proofing + triage) and is read on demand.
+
+## Requirements
+
+The skill's `preflight.sh` checks all of these and tells you what's missing:
+
+- **Audiveris** 5.5+ — no Homebrew cask exists; install the DMG manually, then
+  install OCR language data via **Tools → Install languages…** (no installer has
+  shipped language data since 5.5, and its absence fails *silently*)
+- **MuseScore** 4.7.5+ recommended — `brew install --cask musescore`
+- **poppler** — `brew install poppler`
+- **python3**
 
 ## License
 
