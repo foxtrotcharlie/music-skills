@@ -1,0 +1,21 @@
+{
+  "name": "music-skills",
+  "owner": {
+    "name": "Charles Tanton",
+    "email": "foxtrotcharlie@users.noreply.github.com"
+  },
+  "metadata": {
+    "description": "Claude Code skills for music notation and score digitisation.",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "music",
+      "description": "Music notation and score-digitisation skills. Currently: converting printed sheet music PDFs into editable MuseScore/MusicXML files via Audiveris OMR.",
+      "version": "1.0.0",
+      "author": { "name": "Charles Tanton" },
+      "category": "lifestyle",
+      "source": "./plugins/music"
+    }
+  ]
+}
