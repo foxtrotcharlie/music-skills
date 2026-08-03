@@ -86,8 +86,29 @@ something to fix downstream.
 
 ## Step 3 — Inspect and repair the MusicXML
 
+**First, repair the OCR'd text.** Every Audiveris export needs this, so do it
+before anything else:
+
 ```bash
-python3 ${CLAUDE_SKILL_DIR}/scripts/inspect_musicxml.py ~/Desktop/omr-out/score.xml
+python3 ${CLAUDE_SKILL_DIR}/scripts/clean_omr_text.py \
+  ~/Desktop/omr-out/score.xml ~/Desktop/omr-out/clean.xml --title "Song Title"
+```
+
+It rebuilds the title block and strips text artefacts. Audiveris emits duplicate
+`<creator>`/`<rights>` elements that MuseScore stacks at one anchor, and credits
+with no `type`, which MuseScore then places using raw OMR pixel coordinates — so
+the header and footer overlap into an unreadable pile. Guitar fretboard grids add
+dozens of junk credits (`X 0 O`, `>O<`, `3fr`), chord symbols get misfiled as
+page credits, and any purchase or order line in the source PDF is carried
+through. On a real 6-page chart: **80 credits reduced to 4**, and 4 misread
+chord names recovered as real harmony.
+
+Note that `<work-title>` and `<creator>` populate metadata only and render
+nothing — visible text needs typed credits *with* positions. The script is
+idempotent, so re-running is safe.
+
+```bash
+python3 ${CLAUDE_SKILL_DIR}/scripts/inspect_musicxml.py ~/Desktop/omr-out/clean.xml
 ```
 
 Reports parts, **per-part measure counts** (a part out of step with its siblings

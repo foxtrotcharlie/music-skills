@@ -6,13 +6,13 @@
   },
   "metadata": {
     "description": "Claude Code skills for music notation and score digitisation.",
-    "version": "1.4.1"
+    "version": "1.5.0"
   },
   "plugins": [
     {
       "name": "music",
       "description": "Music notation and score-digitisation skills. Currently: converting printed sheet music PDFs into editable MuseScore/MusicXML files via Audiveris OMR, with preflight, MusicXML inspection, PDF text-layer chord recovery, and conversion helper scripts.",
-      "version": "1.4.1",
+      "version": "1.5.0",
       "author": { "name": "Charles Tanton" },
       "category": "lifestyle",
       "source": "./plugins/music"
