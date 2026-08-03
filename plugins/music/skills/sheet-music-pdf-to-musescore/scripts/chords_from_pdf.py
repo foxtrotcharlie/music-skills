@@ -12,12 +12,14 @@ Reading the text layer sidesteps that entirely: exact chord names, in order.
 Usage:
     chords_from_pdf.py SCORE.pdf                 # ground-truth chord list
     chords_from_pdf.py SCORE.pdf --compare S.xml # what OMR lost
+    chords_from_pdf.py SCORE.pdf --lyrics S.xml  # OMR lyrics absent from the PDF
 
 Exit: 0 = chords found. 1 = no text layer (scanned PDF), or none matched.
 """
 
 from __future__ import annotations
 
+import difflib
 import re
 import subprocess
 import sys
@@ -109,16 +111,75 @@ def omr_chords(path: str) -> list[str]:
     return out
 
 
+def omr_lyrics(path: str) -> list[tuple[str, str]]:
+    """[(measure, syllable)] as Audiveris OCR'd them."""
+    r = ET.parse(path).getroot()
+    out = []
+    for p in r.findall("part"):
+        for m in p.findall("measure"):
+            for l in m.iter("lyric"):
+                t = l.findtext("text")
+                if t:
+                    out.append((m.get("number") or "?", t))
+    return out
+
+
+def check_lyrics(pdf_words: set[str], xml: str) -> None:
+    """Report OMR lyric syllables that do not occur in the PDF text layer.
+
+    Lyrics are OCR, so single-character confusions are routine - an `n` read as
+    an `H` turned "now." into "HOW." on a real chart. Any syllable absent from
+    the text layer is a misread or a hyphenation artefact.
+    """
+    syls = omr_lyrics(xml)
+    if not syls:
+        print("\n=== lyrics ===\nnone in the export")
+        return
+    # Compare case-insensitively on letters only: OMR keeps hyphens and
+    # punctuation that the text layer splits differently.
+    norm = {re.sub(r"[^a-z]", "", w.lower()) for w in pdf_words}
+    norm.discard("")
+    suspect = []
+    for meas, syl in syls:
+        key = re.sub(r"[^a-z]", "", syl.lower())
+        if not key:
+            continue
+        # A syllable of a hyphenated word legitimately appears as a fragment.
+        if key in norm or any(key in w for w in norm):
+            continue
+        suspect.append((meas, syl))
+
+    print(f"\n=== lyrics: {len(syls)} syllables, "
+          f"{len(suspect)} not found in the PDF text layer ===")
+    # The text layer holds the right spelling, so offer the closest candidate
+    # rather than making the reader hunt for it.
+    pool = sorted(norm)
+    for meas, syl in suspect[:40]:
+        key = re.sub(r"[^a-z]", "", syl.lower())
+        near = difflib.get_close_matches(key, pool, n=2, cutoff=0.5)
+        hint = f"  -> likely {' or '.join(repr(n) for n in near)}" if near else ""
+        print(f"   m{meas}: {syl!r}{hint}")
+    if not suspect:
+        print("   all syllables corroborated by the text layer")
+    elif len(suspect) > 40:
+        print(f"   ... and {len(suspect) - 40} more")
+
+
 def main() -> int:
     if len(sys.argv) < 2:
         sys.exit(__doc__)
     pdf = sys.argv[1]
     compare = None
-    if "--compare" in sys.argv:
-        i = sys.argv.index("--compare")
-        if i + 1 >= len(sys.argv):
-            sys.exit("FAIL  --compare needs a MusicXML path")
-        compare = sys.argv[i + 1]
+    lyrics_xml = None
+    for flag, target in (("--compare", "compare"), ("--lyrics", "lyrics")):
+        if flag in sys.argv:
+            i = sys.argv.index(flag)
+            if i + 1 >= len(sys.argv):
+                sys.exit(f"FAIL  {flag} needs a MusicXML path")
+            if target == "compare":
+                compare = sys.argv[i + 1]
+            else:
+                lyrics_xml = sys.argv[i + 1]
 
     pages = words_by_page(pdf)
     total_words = sum(len(p) for p in pages)
@@ -169,6 +230,11 @@ def main() -> int:
 
     print("\nSingle uppercase letters are valid chords AND possible lyrics - eyeball")
     print("the per-page lists above before trusting the count.")
+
+    if lyrics_xml:
+        all_words = {t for page in pages for _y, _x, t in page}
+        check_lyrics(all_words, lyrics_xml)
+
     return 0
 
 

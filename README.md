@@ -27,7 +27,7 @@ Score digitisation and notation skills:
   | :----- | :------ |
   | `preflight.sh` | Verifies Audiveris, OCR language data, MuseScore, poppler, and python3 before any work starts |
   | `inspect_musicxml.py` | Parses `.xml`/`.musicxml`/`.mxl` and flags structural OMR damage (per-part measure mismatches, missing signatures, orphan volta brackets, unsupported tuplets) |
-  | `chords_from_pdf.py` | Extracts ground-truth chord symbols from a born-digital PDF's text layer and diffs them against the OMR output — OCR loses most chord symbols to digit/letter confusion |
+  | `chords_from_pdf.py` | Extracts ground-truth chord symbols from a born-digital PDF's text layer and diffs them against the OMR output; `--lyrics` flags OCR'd syllables absent from the text layer and suggests corrections |
   | `to_mscz.sh` | Converts MusicXML → `.mscz`, validating the artifact rather than MuseScore's exit code |
 
   Reference material lives in `references/` (macOS install, Audiveris CLI,

@@ -114,6 +114,12 @@ ground-truth list per page plus what OMR lost, so chord symbols get retyped from
 a verified list rather than squinting at the PDF. It exits 1 on a scanned PDF
 (no text layer), where OCR is the only route.
 
+`--lyrics score.xml` does the same for sung text: it lists every syllable that
+does **not** appear in the text layer and suggests the closest real word. On the
+same chart that found 3 misreads in 158 syllables — `'HOW.'` for "now.",
+`'WOT].'` for "won.", `'feted'` for "fered" — which is far cheaper than
+proofreading lyrics by eye.
+
 Compare the output against the printed score. **Know where to stop:** signatures,
 structural metadata, part names, and transpositions are fair game to patch in
 XML. Wholesale rewriting of note content is not — hand-editing pitches produces a
