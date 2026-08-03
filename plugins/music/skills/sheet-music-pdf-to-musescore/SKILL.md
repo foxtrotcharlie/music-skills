@@ -69,6 +69,11 @@ pages that show the hard parts, not the title page:
 later GUI correction means re-running the whole pipeline from scratch. The
 `useCompression=false` constant emits readable `.xml` instead of zipped `.mxl`.
 
+**If the page shows guitar chord diagrams**, add the two switches in
+`references/audiveris-cli.md` — the fretboard `X`/`O` grids otherwise generate
+phantom staccatos and dynamics. Tested: 5 of 6 phantoms removed, no real data
+lost. Only do this when step 1 showed the score has no genuine articulations.
+
 Flags, constants, pipeline steps, and `-sheets` range gotchas:
 `references/audiveris-cli.md`.
 
@@ -93,6 +98,21 @@ features drive the proofing checklist. Reads `.xml`, `.musicxml`, and `.mxl`.
 Do not hand-grep for `<key>`/`<time>` — those elements are often pretty-printed
 across lines, so a line-oriented grep silently reports nothing and invents a
 missing-signature bug.
+
+**If the PDF is born-digital, recover the chord symbols from its text layer
+instead of trusting OCR:**
+
+```bash
+python3 ${CLAUDE_SKILL_DIR}/scripts/chords_from_pdf.py score.pdf --compare ~/Desktop/omr-out/score.xml
+```
+
+OMR rasterises the page and throws away perfect text. Tesseract then reads
+`Fsus2` as `FsusZ`, Audiveris rejects the unparseable name and demotes it to a
+plain text annotation, and the chord vanishes from the harmony data. On a real
+chart this cost **51 of 67 chord symbols**. The script prints the exact
+ground-truth list per page plus what OMR lost, so chord symbols get retyped from
+a verified list rather than squinting at the PDF. It exits 1 on a scanned PDF
+(no text layer), where OCR is the only route.
 
 Compare the output against the printed score. **Know where to stop:** signatures,
 structural metadata, part names, and transpositions are fair game to patch in

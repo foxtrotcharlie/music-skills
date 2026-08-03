@@ -42,6 +42,42 @@ and, where noted, the Java source.
 | `org.audiveris.omr.sheet.BookManager.useOpus=true` | Emit a single `.mxl` opus instead of one file per movement. |
 | `org.audiveris.omr.text.Language.defaultSpecification=fra+eng` | OCR languages, `+`-joined. Default `eng`. Don't pile these on — extra languages slow recognition and add false positives. |
 
+## Processing switches
+
+Each switch in `ProcessingSwitch` is backed by a boolean constant, settable from
+the CLI as `org.audiveris.omr.sheet.ProcessingSwitches.<name>`. Available names:
+
+`oneLineStaves`, `fiveLineStaves`, `fourStringTablatures`, `sixStringTablatures`,
+`drumNotation`, `smallHeads`, `smallBeams`, `crossHeads`, `tremolos`,
+`fingerings`, `frets`, `pluckings`, `partialWholeRests`, `multiWholeHeadChords`,
+`chordNames`, `lyrics`, `lyricsAboveStaff`, `articulations`,
+`dynamicsAboveStaff`, `dynamicsBelowStaff`, `keepGrayImages`, `indentations`,
+`bothSharedHeadDots`, `disconnectedBracedParts`, `implicitTuplets`
+
+### Recipe for charts with guitar chord diagrams
+
+The `X`/`O` markers in fretboard grids get misread as staccato dots and
+dynamics. Measured on a 2-page piano/vocal/guitar chart:
+
+```bash
+-constant org.audiveris.omr.sheet.ProcessingSwitches.articulations=false \
+-constant org.audiveris.omr.sheet.ProcessingSwitches.dynamicsAboveStaff=false
+```
+
+| Setting | Phantom markings | Real data |
+|---|---|---|
+| default | 4 staccato + `p` + `sfz` | 10 chords, 68 lyrics, real `mp` |
+| `articulations=false` | staccato gone; `p` + `sfz` remain | unchanged |
+| both switches | only `sfz` remains | unchanged — `mp`, chords, lyrics all intact |
+
+So 5 of 6 phantoms disappear with no loss. **The trade-off is real**: these
+switches suppress genuine articulations and genuine above-staff dynamics too.
+Only use them when the rasterised page (step 1) shows the score has none —
+typical for pop/rock lead sheets, wrong for classical piano.
+
+**`frets=true` does nothing for chord diagrams** — tested, byte-identical
+output. It governs tablature fret digits, not chord frames.
+
 ## Pipeline steps, in order
 
 `LOAD`, `BINARY`, `SCALE`, `GRID`, `HEADERS`, `STEM_SEEDS`, `BEAMS`, `LEDGERS`,
