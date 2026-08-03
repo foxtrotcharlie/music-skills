@@ -62,7 +62,7 @@ order by how often each breaks.
 
 | Symptom | Cause / response |
 |---|---|
-| `mscore` exits **134** (SIGABRT) after writing output | A known MuseScore bug — *"CLI: fix crash on app quit"* — **fixed in 4.7.5**. On 4.7.5+ upgrade and it goes away; on 4.7.4 and earlier it is intermittent and **not** a failure. Either way, judge the `.mscz`, not the exit code; `scripts/to_mscz.sh` does. |
+| `mscore` exits **134** (SIGABRT) after writing output | A known crash-on-quit bug. The fix ([PR #34136](https://github.com/musescore/MuseScore/pull/34136), *"[4.7.5] CLI: fix crash on app quit"*) is **merged but unreleased** — 4.7.4, published 2026-07-07, is still the latest release, so there is nothing to upgrade to. Not a conversion failure: judge the `.mscz`, not the exit code, as `scripts/to_mscz.sh` does. Re-check whether 4.7.5 has shipped before repeating this advice. |
 | Setting `QT_QPA_PLATFORM=offscreen` to "fix" that crash | **There is no offscreen plugin on macOS** — the bundle ships only `libqcocoa.dylib`, so Qt fails to start and **no output file is produced**. Verified. On Linux 4.6+, offscreen exists but you must set both `QT_QPA_PLATFORM` *and* `MU_QT_QPA_PLATFORM`. |
 | `grep`ping `<key>`/`<time>` finds nothing | The elements are pretty-printed across lines. A line-oriented grep silently reports nothing — use `scripts/inspect_musicxml.py`, which parses the XML. |
 | No `<key>` element in the export | Normal for C major / A minor: there is no key signature to print, so Audiveris emits none. Not a defect by itself. |

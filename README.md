@@ -39,7 +39,10 @@ The skill's `preflight.sh` checks all of these and tells you what's missing:
 - **Audiveris** 5.5+ — no Homebrew cask exists; install the DMG manually, then
   install OCR language data via **Tools → Install languages…** (no installer has
   shipped language data since 5.5, and its absence fails *silently*)
-- **MuseScore** 4.7.5+ recommended — `brew install --cask musescore`
+- **MuseScore** 4.x — DMG from [musescore.org](https://musescore.org/download) or
+  `brew install --cask musescore`. Note converter mode aborts with exit 134 after
+  writing valid output on 4.7.4 (latest at time of writing); the upstream fix is
+  merged but unreleased, so `to_mscz.sh` validates the output file instead
 - **poppler** — `brew install poppler`
 - **python3**
 

@@ -50,17 +50,18 @@ its own folder fine, and setting it silently overrides the data the GUI installe
 
 ## MuseScore
 
-```bash
-brew install --cask musescore
-```
+Either the DMG from <https://musescore.org/download> or Homebrew
+(`brew install --cask musescore`) is fine. If it was installed from the DMG,
+`brew upgrade` won't manage it — update in-app or by DMG.
 
 The CLI binary is at `/Applications/MuseScore 4.app/Contents/MacOS/mscore`
 (confirmed on 4.7.4; `CFBundleExecutable` is `mscore`). **MuseScore 3 also named
 its binary `mscore`**, so discriminate by the `.app` bundle name rather than the
 executable, and always quote the path — it contains a space.
 
-Prefer **4.7.5 or later**: it fixes the CLI crash-on-quit that makes converter
-mode exit 134 after writing valid output.
+**Expect converter mode to abort with exit 134** after writing valid output. The
+fix is merged upstream for 4.7.5 but unreleased (4.7.4, 2026-07-07, is latest),
+so no upgrade avoids it yet — `scripts/to_mscz.sh` validates the artifact instead.
 
 ## poppler
 

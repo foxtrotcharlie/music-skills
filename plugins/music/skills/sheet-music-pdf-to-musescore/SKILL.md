@@ -107,9 +107,11 @@ bash ${CLAUDE_SKILL_DIR}/scripts/to_mscz.sh ~/Desktop/omr-out/score.xml ~/Deskto
 ```
 
 **Never judge this step by the exit code.** MuseScore writes a complete, valid
-`.mscz` and then, on **4.7.4 and earlier**, intermittently aborts with **exit
-134** — a known crash-on-quit bug fixed in **4.7.5**. The wrapper validates the
-artifact instead: that the zip reads, contains a `.mscx`, and holds notes.
+`.mscz` and then intermittently aborts with **exit 134**. This is a known
+crash-on-quit bug; the fix is merged upstream and slated for 4.7.5, but **4.7.4
+is the latest release**, so there is no version to upgrade to yet. Validating the
+artifact — the zip reads, contains a `.mscx`, holds notes — is the only
+mitigation, and the wrapper does it.
 
 Do not reach for `QT_QPA_PLATFORM=offscreen` to suppress it — macOS ships no
 offscreen Qt plugin, so MuseScore fails to start and writes nothing at all.

@@ -3,9 +3,11 @@
 # than the exit code.
 #
 # Why this wrapper exists: MuseScore writes a complete, valid .mscz and THEN
-# intermittently aborts (SIGABRT, exit 134) on 4.7.4 and earlier - a known
-# crash-on-quit bug fixed in 4.7.5. Trusting $? reports failure on a perfectly
-# good conversion and kills any `set -e` caller.
+# intermittently aborts (SIGABRT, exit 134). Trusting $? reports failure on a
+# perfectly good conversion and kills any `set -e` caller.
+#
+# The upstream fix (PR #34136) is merged but UNRELEASED - 4.7.4 is still the
+# latest release - so validating the artifact is the only mitigation available.
 #
 # Do NOT "fix" that with QT_QPA_PLATFORM=offscreen: macOS ships no offscreen Qt
 # plugin, so MuseScore fails to start and produces no output at all.
@@ -34,7 +36,7 @@ fi
 rm -f "$OUT"
 
 echo "note  MuseScore converter mode starts a real Qt app, not a headless process."
-echo "      An abort after writing output is a known 4.7.4-and-earlier bug."
+echo "      An abort after writing valid output is a known, still-unreleased bug."
 
 LOG=$(mktemp -t to_mscz)
 # -f suppresses the corruption / version-mismatch warnings OMR output can trigger.
@@ -79,7 +81,7 @@ if [ "$rc" -eq 0 ]; then
 else
   echo "ok    $OUT  (${size} bytes, ${notes} notes)"
   echo "      mscore exited $rc after writing valid output - known crash-on-quit"
-  echo "      bug, fixed in MuseScore 4.7.5. Output verified above."
+  echo "      bug (fix merged upstream, not yet released). Output verified above."
 fi
 
 if [ "$notes" -eq 0 ]; then
