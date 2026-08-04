@@ -27,9 +27,10 @@ transcribed. Rasterise a page (step 1) to check *before* investing in a run.
 bash ${CLAUDE_SKILL_DIR}/scripts/preflight.sh
 ```
 
-Checks Audiveris, OCR language data, MuseScore, poppler, and python3, and prints
-the `AUDIVERIS` and `MSCORE` paths to use. Non-zero exit means stop — resolve the
-gaps first, using `references/install-macos.md`.
+Checks Audiveris, OCR language data, MuseScore, poppler, python3 and pdfplumber,
+and prints the `AUDIVERIS`, `MSCORE` and `MUSIC_SKILLS_PYTHON` paths to use.
+Non-zero exit means stop — resolve the gaps first, using
+`references/install-macos.md`.
 
 Two traps it exists to catch: **missing OCR language data fails silently** (no
 lyrics, tempo text, or chord names, and no error), and Audiveris has shipped
@@ -135,25 +136,40 @@ ground-truth list per page plus what OMR lost, so chord symbols get retyped from
 a verified list rather than squinting at the PDF. It exits 1 on a scanned PDF
 (no text layer), where OCR is the only route.
 
-**Then place every chord symbol in the right bar:**
+**Then place every chord symbol in the right bar and on the right beat:**
 
 ```bash
 python3 ${CLAUDE_SKILL_DIR}/scripts/place_chords_from_pdf.py \
   score.pdf ~/Desktop/omr-out/clean.xml ~/Desktop/omr-out/chorded.xml
 ```
 
-The PDF text layer holds every chord with coordinates, and the score holds its
-own layout in `<print new-page>` / `<print new-system>` markers. Together those
-place each chord: cluster the symbols into rows (one per system), match rows to
-systems, then split each system's width by its bar count. On a real chart this
-put **all 67** chords in the correct bars, against 16 from OMR. Use `--dry-run`
-to review the per-bar table before writing.
+A born-digital PDF is not just text with coordinates — it is the whole engraving.
+Staff lines and barlines are vector strokes, noteheads are glyphs at known
+positions. So the bar a chord belongs to is **read, not estimated**: staff lines
+group into staves, staves into systems, and each system's barlines give its real
+bar boundaries. On a real 6-page chart that reproduced the score's own layout
+exactly — 23 systems, 70 bars — and put **all 67** chord symbols in the correct
+bars, against 16 from OMR. Use `--dry-run` to review the per-bar table first.
 
-Two traps it handles: a system with **no** chords would shift every later row up
-by one, so it skips ahead where the vertical step between rows doubles; and
-harmony must be cleared from **every** part, or a leftover chord in a lower part
-renders a second time above its own staff. Its known limit is a page whose
-*first* system carries no chords — it reports a mismatch rather than guessing.
+The beat comes from matching each bar's note columns against that measure's
+onsets, counting onsets across **every** part: a chord sits above whichever note
+sounds under it, which is often a piano note while the voice rests. Counting only
+the top part's onsets makes the two disagree, and where the counts coincide
+anyway the chord is mapped to the wrong column with full confidence. Where the
+counts cannot be reconciled the beat falls back to proportional position across
+the real bar, snapped to a real onset — the script reports how many took each
+route.
+
+Needs **pdfplumber**; preflight reports the interpreter that has it, and the
+script re-runs itself under that interpreter if it can find one. Without it,
+placement falls back to `pdftotext` and equal-width bars, which is wrong in any
+bar holding more than one chord — bars are not equal width, and a lyric
+overhanging the final barline inflates the extent. It says which route it took.
+
+Two further traps it handles: harmony must be cleared from **every** part, or a
+leftover chord in a lower part renders a second time above its own staff; and a
+wide symbol like `Fsus2` is left-aligned to its note and so can start a fraction
+*before* the barline of the bar it belongs to.
 
 `--lyrics score.xml` does the same for sung text, splitting problems into
 **misreads** (absent from the text layer) and **wrong case** (right letters,

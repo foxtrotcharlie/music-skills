@@ -87,6 +87,25 @@ else
   miss_required=1
 fi
 
+say "== pdfplumber (reads the engraving of a born-digital score, step 3) =="
+# Homebrew's python is PEP 668 externally-managed and brew has no pdfplumber
+# formula, so it normally lives in a venv rather than on the default interpreter.
+# Search the same order the scripts do, and report which one to use.
+PYTHON_GEO=""
+for cand in "$HOME/.venvs/music-skills/bin/python" "${MUSIC_SKILLS_PYTHON:-}" "$(command -v python3 2>/dev/null)"; do
+  [ -n "$cand" ] && [ -x "$cand" ] || continue
+  if "$cand" -c 'import pdfplumber' >/dev/null 2>&1; then PYTHON_GEO="$cand"; break; fi
+done
+if [ -n "$PYTHON_GEO" ]; then
+  ok "$PYTHON_GEO"
+else
+  warn "pdfplumber absent - chord placement falls back to equal-width bars, which"
+  warn "  gets the beat wrong in any bar holding more than one chord"
+  warn "  python3 -m venv ~/.venvs/music-skills"
+  warn "  ~/.venvs/music-skills/bin/pip install pdfplumber"
+  miss_optional=1
+fi
+
 say "== optional =="
 if command -v waifu2x-ncnn-vulkan >/dev/null 2>&1; then
   ok "waifu2x-ncnn-vulkan (upscaling unrecoverable low-res scans)"
@@ -100,6 +119,7 @@ if [ "$miss_required" -eq 0 ]; then
   say "READY. Export paths for the run:"
   say "  AUDIVERIS=\"$AUDIVERIS_BIN\""
   say "  MSCORE=\"$MSCORE\""
+  [ -n "$PYTHON_GEO" ] && say "  MUSIC_SKILLS_PYTHON=\"$PYTHON_GEO\""
   exit 0
 fi
 say "NOT READY - resolve the MISSING items above before converting."
